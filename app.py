@@ -171,19 +171,161 @@ def create_visual_report(original, resized, gray, hog_img, prediction, proba):
 @app.route('/', methods=['GET'])
 def index():
     return '''
-    <!doctype html>
-    <html>
-      <head>
-        <title>Oil Spill Detection</title>
-      </head>
-      <body>
-        <h1>Oil Spill Detection</h1>
-        <form action="/predict" method="post" enctype="multipart/form-data">
-          <input type="file" name="image" accept="image/*" required>
-          <input type="submit" value="Upload and Detect">
-        </form>
-      </body>
-    </html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afzal Khan</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 500px;
+        text-align: center;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+      }
+
+      #drop-area {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      #drop-area:hover {
+        background-color: #f0f0f0;
+      }
+
+      #drop-area.pressed {
+        background-color: #e0e0e0;
+      }
+
+      #drop-area p {
+        margin: 0;
+      }
+
+      #file-input {
+        display: none;
+      }
+
+      .browse-text {
+        color: #007bff;
+        text-decoration: underline;
+        cursor: pointer;
+      }
+
+      #preview {
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+
+      #preview img {
+        max-width: 100%;
+        max-height: 300px;
+        border-radius: 8px;
+      }
+
+      button {
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Random Forest</h1>
+      <form id="upload-form" action="/predict" method="post" enctype="multipart/form-data">
+        <div id="drop-area">
+          <p>Drag & Drop an image or <span class="browse-text">Browse</span>
+          </p>
+          <input type="file" id="file-input" name="image" accept="image/*" required>
+        </div>
+        <div id="preview"></div>
+        <button type="submit">Upload & Detect</button>
+      </form>
+    </div>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const preview = document.getElementById('preview');
+        const browseText = document.querySelector('.browse-text');
+        // Highlight drop area when file is dragged over it
+        dropArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropArea.classList.add('pressed');
+        });
+        dropArea.addEventListener('dragleave', () => {
+          dropArea.classList.remove('pressed');
+        });
+        dropArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropArea.classList.remove('pressed');
+          const files = e.dataTransfer.files;
+          handleFiles(files);
+        });
+        // Open file dialog on click
+        dropArea.addEventListener('click', () => {
+          fileInput.click();
+        });
+        browseText.addEventListener('click', (e) => {
+          e.stopPropagation();
+          fileInput.click();
+        });
+        fileInput.addEventListener('change', (e) => {
+          const files = e.target.files;
+          handleFiles(files);
+        });
+
+        function handleFiles(files) {
+          if (files.length > 0) {
+            const file = files[0];
+            if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                preview.innerHTML = `
+                  
+							<img src="${e.target.result}" alt="Image preview">`;
+              };
+              reader.readAsDataURL(file);
+            } else {
+              alert('Please upload a valid image file.');
+            }
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
     '''
 
 @app.route('/predict', methods=['POST'])
@@ -210,43 +352,151 @@ def predict():
     visuals = create_visual_report(original, resized, gray, hog_img, prediction, prediction_proba)
 
     html_response = f"""
-    <!doctype html>
-    <html>
-      <head>
-        <title>Prediction Result</title>
-      </head>
-      <body>
-        <h1>Oil Spill Detection Result</h1>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Result</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f9;
+        margin: 0;
+        padding: 0;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      h1 {
+        text-align: center;
+        font-size: 2.5rem;
+        color: #4A90E2;
+      }
+
+      h2 {
+        text-align: center;
+        font-size: 2rem;
+        color: #333;
+        margin-top: 20px;
+      }
+
+      h3 {
+        font-size: 1.5rem;
+        color: #333;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+
+      .content-section {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .content-section div {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        text-align: center;
+        flex: 1;
+        min-width: 250px;
+      }
+
+      .content-section img {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+      }
+
+      .prediction-text {
+        font-size: 1.2rem;
+        text-align: center;
+        line-height: 1.6;
+        margin-bottom: 30px;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      a {
+        display: block;
+        text-align: center;
+        margin-top: 30px;
+        padding: 12px;
+        background-color: #4A90E2;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 1.1rem;
+      }
+
+      a:hover {
+        background-color: #357ABD;
+      }
+
+      @media (max-width: 768px) {
+        .content-section {
+          flex-direction: column;
+          align-items: center;
+        }
+      }
+
+      @media (max-width: 480px) {
+        h1 {
+          font-size: 2rem;
+        }
+
+        h2 {
+          font-size: 1.5rem;
+        }
+
+        .prediction-text {
+          font-size: 1rem;
+        }
+
+        a {
+          font-size: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Random Forest Detection Result</h1>
+      <div class="prediction-text">
         <p>{visuals['prediction_text']}</p>
-        <h2>Visual Report</h2>
+      </div>
+      <h2>Visual Report</h2>
+      <div class="content-section">
         <div>
-          <h3>Original Image</h3>
-          <img src="data:image/png;base64,{visuals['original']}" style="max-width:300px;"/>
+          <h3>Original Image</h3><img src="data:image/png;base64,{visuals['original']}" alt="Original Image" />
         </div>
         <div>
-          <h3>Resized Image</h3>
-          <img src="data:image/png;base64,{visuals['resized']}" style="max-width:300px;"/>
+          <h3>Grayscale Image</h3><img src="data:image/png;base64,{visuals['grayscale']}" alt="Grayscale Image" />
         </div>
         <div>
-          <h3>Grayscale Image</h3>
-          <img src="data:image/png;base64,{visuals['grayscale']}" style="max-width:300px;"/>
+          <h3>HOG Extraction</h3><img src="data:image/png;base64,{visuals['hog']}" alt="HOG Extraction" />
         </div>
         <div>
-          <h3>HOG Extraction</h3>
-          <img src="data:image/png;base64,{visuals['hog']}" style="max-width:300px;"/>
+          <h3>Heatmap</h3><img src="data:image/png;base64,{visuals['heatmap']}" alt="Heatmap" />
         </div>
         <div>
-          <h3>Heatmap</h3>
-          <img src="data:image/png;base64,{visuals['heatmap']}" style="max-width:300px;"/>
+          <h3>Prediction Probabilities</h3><img src="data:image/png;base64,{visuals['prob_chart']}" alt="Prediction Probabilities" />
         </div>
-        <div>
-          <h3>Prediction Probabilities</h3>
-          <img src="data:image/png;base64,{visuals['prob_chart']}" style="max-width:300px;"/>
-        </div>
-        <br>
-        <a href="/">Try another image</a>
-      </body>
-    </html>
+      </div><a href="/">Try another image</a>
+    </div>
+  </body>
+</html>
     """
     return html_response
 
