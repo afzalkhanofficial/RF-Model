@@ -40,19 +40,16 @@ def read_image(file_stream):
     Returns the image as a NumPy array in RGB format.
     """
     try:
-        # Use PIL for robust reading
         with Image.open(file_stream) as img:
             img = img.convert("RGB")
             return np.array(img)
     except Exception as e:
-        # Reset stream and try OpenCV
         try:
             file_stream.seek(0)
             file_bytes = np.asarray(bytearray(file_stream.read()), dtype=np.uint8)
             img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
             if img is None:
                 raise ValueError("cv2.imdecode returned None")
-            # Convert from BGR to RGB
             return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         except Exception as e:
             print(f"Error reading image: {e}")
@@ -64,22 +61,22 @@ def preprocess_uploaded_image(file_stream):
     - Reads the image (supports all common formats)
     - Resizes it to a fixed size
     - Converts it to grayscale for HOG extraction
-    - Extracts HOG features
+    - Extracts HOG features and computes a color histogram
     Returns:
-      original image, resized image, grayscale image, hog image, and hog features.
+      original image, resized image, grayscale image, hog image, and the combined feature vector.
     """
     img = read_image(file_stream)
     if img is None:
         return None, None, None, None, None
 
-    # Resize the image to the standard size (maintaining aspect ratio can be implemented if desired)
+    # Resize image to standard size
     try:
         img_resized = transform.resize(img, IMAGE_SIZE, anti_aliasing=True)
     except Exception as e:
         print(f"Error resizing image: {e}")
         return None, None, None, None, None
 
-    # Convert to grayscale for HOG extraction and visual representation
+    # Convert to grayscale for HOG extraction and visualization
     try:
         img_gray = color.rgb2gray(img_resized)
     except Exception as e:
@@ -93,7 +90,19 @@ def preprocess_uploaded_image(file_stream):
         print(f"Error extracting HOG features: {e}")
         return None, None, None, None, None
 
-    return img, img_resized, img_gray, hog_image, hog_features
+    # Compute color histogram for each RGB channel (32 bins per channel)
+    try:
+        hist_r, _ = np.histogram(img_resized[:, :, 0], bins=32, range=(0, 1), density=True)
+        hist_g, _ = np.histogram(img_resized[:, :, 1], bins=32, range=(0, 1), density=True)
+        hist_b, _ = np.histogram(img_resized[:, :, 2], bins=32, range=(0, 1), density=True)
+        color_hist = np.concatenate([hist_r, hist_g, hist_b])
+    except Exception as e:
+        print(f"Error computing color histogram: {e}")
+        color_hist = np.zeros(96)
+    
+    # Combine HOG features and color histogram into a single feature vector
+    features = np.concatenate([hog_features, color_hist])
+    return img, img_resized, img_gray, hog_image, features
 
 def create_visual_report(original, resized, gray, hog_img, prediction, proba):
     """
@@ -102,7 +111,6 @@ def create_visual_report(original, resized, gray, hog_img, prediction, proba):
     """
     visuals = {}
 
-    # Helper function to convert Matplotlib figure to base64 string
     def fig_to_base64(fig):
         buf = io.BytesIO()
         fig.savefig(buf, format="png", bbox_inches="tight")
@@ -151,20 +159,17 @@ def create_visual_report(original, resized, gray, hog_img, prediction, proba):
     fig_chart = Figure(figsize=(4,3))
     ax_chart = fig_chart.subplots()
     classes = ['No Oil Spill', 'Oil Spill']
-    # Create a simple bar chart: we assume two classes
     ax_chart.bar(classes, proba, color=['green', 'red'])
     ax_chart.set_ylim([0, 1])
     ax_chart.set_ylabel("Probability")
     ax_chart.set_title("Prediction Probabilities")
     visuals['prob_chart'] = fig_to_base64(fig_chart)
 
-    # Additional Prediction Text
     visuals['prediction_text'] = f"Prediction: {'Oil Spill Detected' if prediction==1 else 'No Oil Spill Detected'}<br>Probabilities: {proba}"
     return visuals
 
 @app.route('/', methods=['GET'])
 def index():
-    # Simple HTML form for image upload
     return '''
     <!doctype html>
     <html>
@@ -190,22 +195,20 @@ def predict():
     if file.filename == "":
         abort(400, "No selected file.")
 
-    # Process the uploaded image
-    original, resized, gray, hog_img, hog_features = preprocess_uploaded_image(file.stream)
-    if hog_features is None:
+    original, resized, gray, hog_img, features = preprocess_uploaded_image(file.stream)
+    if features is None:
         abort(400, "Error processing image. Please upload a valid image file.")
 
-    # Scale the feature vector using the loaded scaler
-    hog_features_scaled = scaler.transform([hog_features])
+    # Scale the combined feature vector using the loaded scaler
+    features_scaled = scaler.transform([features])
 
     # Get prediction and probability estimates
-    prediction = rf_model.predict(hog_features_scaled)[0]
-    prediction_proba = rf_model.predict_proba(hog_features_scaled)[0]
+    prediction = rf_model.predict(features_scaled)[0]
+    prediction_proba = rf_model.predict_proba(features_scaled)[0]
 
     # Generate visual report
     visuals = create_visual_report(original, resized, gray, hog_img, prediction, prediction_proba)
 
-    # Render the results with embedded images
     html_response = f"""
     <!doctype html>
     <html>
@@ -248,5 +251,4 @@ def predict():
     return html_response
 
 if __name__ == '__main__':
-    # Run the app on the specified host and port
     app.run(host='0.0.0.0', port=5000)
