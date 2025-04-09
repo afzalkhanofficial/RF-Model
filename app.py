@@ -194,8 +194,8 @@ def index():
         border-radius: 10px;
         box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
         text-align: center;
-        width: 90%;
-        max-width: 500px;
+        width: 70%;
+        max-width: 400px;
       }
 
       h1 {
@@ -411,21 +411,10 @@ def predict():
         border-left: 4px solid var(--accent-color);
         font-size: 1.2rem;
         transition: transform 0.3s ease;
-        transition: color 0.3s ease;
       }}
 
       .prediction-text:hover {{
         transform: translateY(-3px);
-      }}
-
-      .prediction-text.danger p {{
-        color: #e74c3c;
-        font-weight: 600;
-      }}
-
-      .prediction-text.safe p {{
-        color: #2ecc71;
-        font-weight: 600;
       }}
 
       .content-section {{
@@ -461,11 +450,12 @@ def predict():
       .image-card img {{
         width: 100%;
         height: 300px;
-        object-fit: cover;
+        object-fit: contain;
         border-radius: 8px;
         border: 2px solid #f1f3f5;
         object-position: center;
         transition: transform 0.3s ease;
+        padding: 10px;
       }}
 
       .btn {{
@@ -528,7 +518,7 @@ def predict():
   <body>
     <div class="container">
       <h1>🌊 Random Forest Analysis Report</h1>
-      <div class="prediction-text {{% if visuals['prediction_text'] == 'Oil Spill Detected' %}}danger{{% else %}}safe{{% endif %}}">
+      <div class="prediction-text">
         <p>{visuals['prediction_text']}</p>
       </div>
       <h2>📊 Visual Analysis</h2>
