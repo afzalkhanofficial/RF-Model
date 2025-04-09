@@ -15,7 +15,7 @@ from matplotlib.figure import Figure
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Constants for image processing and feature extraction
-IMAGE_SIZE = (128, 128)  # Standard size for model input
+IMAGE_SIZE = (128, 128)
 HOG_PARAMS = {
     'orientations': 9,
     'pixels_per_cell': (8, 8),
@@ -176,7 +176,7 @@ def index():
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oil Spill Detection</title>
+    <title>Random Forest @afzalkhan</title>
     <style>
       body {
         font-family: 'Poppins', sans-serif;
@@ -254,7 +254,7 @@ def index():
   </head>
   <body>
     <div class="container">
-      <h1>Oil Spill Detection</h1>
+      <h1>RF Oil Spill Detection</h1>
       <form id="upload-form" action="/predict" method="post" enctype="multipart/form-data">
         <div id="drop-area">
           <p>Drag & Drop an image or <span class="browse-text">Browse</span></p>
@@ -349,139 +349,209 @@ def predict():
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prediction Result</title>
+    <title>Random Forest @afzalkhan</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-      body {{
-        font-family: 'Poppins', sans-serif;
-        background: linear-gradient(to right, #4A90E2, #357ABD);
+      :root {{
+        --primary-color: #4A90E2;
+        --secondary-color: #357ABD;
+        --accent-color: #FF6B6B;
+        --text-color: #2d3436;
+      }}
+
+      * {{
         margin: 0;
         padding: 0;
-        color: #333;
+        box-sizing: border-box;
+      }}
+
+      body {{
+        font-family: 'Poppins', sans-serif;
+        background: linear-gradient(135deg, #4A90E2, #357ABD);
+        color: var(--text-color);
+        min-height: 100vh;
+        padding: 2rem;
         display: flex;
         justify-content: center;
         align-items: center;
-        min-height: 100vh;
       }}
 
       .container {{
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        padding: 2.5rem;
+        width: 95%;
         max-width: 1200px;
-        width: 90%;
-        background: white;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
-        text-align: center;
+        margin: 2rem auto;
+        animation: fadeIn 0.6s ease-out;
       }}
 
       h1 {{
-        font-size: 2.5rem;
-        color: #4A90E2;
+        color: var(--primary-color);
+        font-size: 2.8rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        font-weight: 600;
+      }}
+
+      h2 {{
+        color: var(--secondary-color);
+        font-size: 2rem;
+        margin: 2rem 0 1.5rem;
+        text-align: center;
       }}
 
       .prediction-text {{
-        font-size: 1.3rem;
-        background: #f9f9f9;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
+        background: linear-gradient(145deg, #f8f9fa, #ffffff);
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-left: 4px solid var(--accent-color);
+        font-size: 1.2rem;
+        transition: transform 0.3s ease;
+        transition: color 0.3s ease;
+      }}
+
+      .prediction-text:hover {{
+        transform: translateY(-3px);
+      }}
+
+      .prediction-text.danger p {{
+        color: #e74c3c;
+        font-weight: 600;
+      }}
+
+      .prediction-text.safe p {{
+        color: #2ecc71;
+        font-weight: 600;
       }}
 
       .content-section {{
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
       }}
 
-      .content-section div {{
+      .image-card {{
+        position: relative;
+        overflow: hidden;
         background: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 15px;
-        text-align: center;
-        flex: 1;
-        min-width: 250px;
-        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 15px;
+        padding: 1.2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
       }}
 
-      .content-section div:hover {{
-        transform: scale(1.05);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+      .image-card:hover {{
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
       }}
 
-      .content-section img {{
+      .image-card h3 {{
+        color: var(--secondary-color);
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        font-weight: 500;
+      }}
+
+      .image-card img {{
         width: 100%;
-        max-width: 100%;
-        height: auto;
-        border-radius: 5px;
-        box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.1);
+        height: 300px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #f1f3f5;
+        object-position: center;
+        transition: transform 0.3s ease;
       }}
 
-      a {{
-        display: inline-block;
-        margin-top: 30px;
-        padding: 12px 20px;
-        background-color: #4A90E2;
+      .btn {{
+        display: inline-flex;
+        align-items: center;
+        padding: 0.8rem 2rem;
+        background: var(--primary-color);
         color: white;
         text-decoration: none;
-        border-radius: 5px;
-        font-size: 1.2rem;
-        transition: background 0.3s, transform 0.2s;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        margin: 2rem auto 0;
+        gap: 0.5rem;
       }}
 
-      a:hover {{
-        background-color: #357ABD;
-        transform: scale(1.05);
+      .btn:hover {{
+        background: var(--secondary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
       }}
 
       @media (max-width: 768px) {{
+        .container {{
+          padding: 1.5rem;
+          border-radius: 15px;
+        }}
+
         h1 {{
-          font-size: 2rem;
+          font-size: 2.2rem;
         }}
 
-        .prediction-text {{
-          font-size: 1.1rem;
+        h2 {{
+          font-size: 1.6rem;
         }}
 
-        .content-section {{
-          flex-direction: column;
-          align-items: center;
+        .image-card img {{
+          height: 250px;
+        }}
+
+        .btn {{
+          width: 100%;
+          justify-content: center;
+        }}
+      }}
+
+      @keyframes fadeIn {{
+        from {{
+          opacity: 0;
+          transform: translateY(20px);
+        }}
+
+        to {{
+          opacity: 1;
+          transform: translateY(0);
         }}
       }}
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Oil Spill Detection Result</h1>
-      <div class="prediction-text">
+      <h1>🌊 Random Forest Analysis Report</h1>
+      <div class="prediction-text {% if visuals['prediction_text'] == 'Oil Spill Detected' %}danger{% else %}safe{% endif %}">
         <p>{visuals['prediction_text']}</p>
       </div>
-      <h2>Visual Report</h2>
+      <h2>📊 Visual Analysis</h2>
       <div class="content-section">
-        <div>
-          <h3>Original Image</h3>
-          <img src="data:image/png;base64,{visuals['original']}" alt="Original Image" />
+        <div class="image-card">
+          <h3>Original Image</h3><img src="data:image/png;base64,{visuals['original']}" alt="Original Image" />
         </div>
-        <div>
-          <h3>Grayscale Image</h3>
-          <img src="data:image/png;base64,{visuals['grayscale']}" alt="Grayscale Image" />
+        <div class="image-card">
+          <h3>Grayscale Analysis</h3><img src="data:image/png;base64,{visuals['grayscale']}" alt="Grayscale Image" />
         </div>
-        <div>
-          <h3>HOG Extraction</h3>
-          <img src="data:image/png;base64,{visuals['hog']}" alt="HOG Extraction" />
+        <div class="image-card">
+          <h3>HOG Features</h3><img src="data:image/png;base64,{visuals['hog']}" alt="HOG Extraction" />
         </div>
-        <div>
-          <h3>Heatmap</h3>
-          <img src="data:image/png;base64,{visuals['heatmap']}" alt="Heatmap" />
+        <div class="image-card">
+          <h3>Heatmap Visualization</h3><img src="data:image/png;base64,{visuals['heatmap']}" alt="Heatmap" />
         </div>
-        <div>
-          <h3>Prediction Probabilities</h3>
-          <img src="data:image/png;base64,{visuals['prob_chart']}" alt="Prediction Probabilities" />
+        <div class="image-card">
+          <h3>Probability Distribution</h3><img src="data:image/png;base64,{visuals['prob_chart']}" alt="Prediction Probabilities" />
         </div>
-      </div>
-      <a href="/">Try another image</a>
+      </div><a href="/" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg> Analyze Another Image </a>
     </div>
   </body>
 </html>
