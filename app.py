@@ -528,7 +528,7 @@ def predict():
   <body>
     <div class="container">
       <h1>🌊 Random Forest Analysis Report</h1>
-      <div class="prediction-text {% if visuals['prediction_text'] == 'Oil Spill Detected' %}danger{% else %}safe{% endif %}">
+      <div class="prediction-text {{% if visuals['prediction_text'] == 'Oil Spill Detected' %}}danger{{% else %}}safe{{% endif %}}">
         <p>{visuals['prediction_text']}</p>
       </div>
       <h2>📊 Visual Analysis</h2>
