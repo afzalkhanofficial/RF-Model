@@ -221,6 +221,7 @@ def index():
 
       #preview {
         margin-top: 20px;
+        margin-bottom: 20px;
       }
 
       #preview img {
