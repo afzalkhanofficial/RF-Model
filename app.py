@@ -165,7 +165,9 @@ def create_visual_report(original, resized, gray, hog_img, prediction, proba):
     ax_chart.set_title("Prediction Probabilities")
     visuals['prob_chart'] = fig_to_base64(fig_chart)
 
-    visuals['prediction_text'] = f"Prediction: {'Oil Spill Detected' if prediction==1 else 'No Oil Spill Detected'}<br>Probabilities: {proba}"
+    result = "Oil Spill Detected" if prediction == 1 else "No Oil Spill Detected"
+    color = "red" if prediction == 1 else "green"
+    visuals['prediction_text'] = f"<span style='color: {color}; font-weight: bold; font-size: 1.3rem;'>{result}</span>"
     return visuals
 
 @app.route('/', methods=['GET'])
@@ -539,12 +541,31 @@ def predict():
         <div class="image-card">
           <h3>Probability Distribution</h3><img src="data:image/png;base64,{visuals['prob_chart']}" alt="Prediction Probabilities" />
         </div>
-      </div><a href="/" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left">
+      </div><a href="#" class="btn" download="report.html" onclick="downloadReport(event)">
+  📥 Download Report
+</a>
+<a href="/" class="btn"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-arrow-left">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg> Analyze Another Image </a>
     </div>
   </body>
+  <script>
+function downloadReport(event) {
+  event.preventDefault();
+  const content = document.documentElement.outerHTML;
+  const blob = new Blob([content], { type: "text/html" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "oil_spill_report.html";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+</script>
+
 </html>
     """
     return html_response
